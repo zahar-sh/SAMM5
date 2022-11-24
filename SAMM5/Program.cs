@@ -1,9 +1,15 @@
-﻿var N = 1000;
-var lyambda = 12;
-var my = 4.5;
+﻿using System.Globalization;
+
+Console.Write("Enter N: ");
+var count = (int)ParseFloat(Console.ReadLine());
+Console.Write("Enter lambda: ");
+var lambda = ParseFloat(Console.ReadLine());
+Console.Write("Enter my: ");
+var my = ParseFloat(Console.ReadLine());
 
 var random = new Random();
-var timeBeforeApplication = aDistribution(lyambda);
+var timeBeforeApplication = NextDouble(lambda);
+
 var timeUntilEndOfChannel = new double[3];
 var channel = new int[3];
 var queue = new int[3];
@@ -16,181 +22,78 @@ var timeInQueue = 0.0d;
 var timeInSystem = 0.0d;
 
 var time = 0.0d;
-while (time <= N)
+while (time <= count)
 {
-    if (timeBeforeApplication == 0)
+    if (timeBeforeApplication < 1.0E-30)
     {
-        int i = status;
-        if (channel[i] == 0)
+        if (channel[status] == 0)
         {
-            channel[i] = 1;
+            channel[status] = 1;
             quantityInSystem++;
-            timeUntilEndOfChannel[i] = aDistribution(my);
+            timeUntilEndOfChannel[status] = NextDouble(my);
         }
         else
         {
-            if (queue[i] < 6)
+            if (queue[status] < 6)
             {
-                queue[i]++;
+                queue[status]++;
                 quantityInQueue++;
                 quantityInSystem++;
             }
         }
-        switch (i)
-        {
-            case 0:
-                status = 1;
-                break;
-            case 1:
-                status = 2;
-                break;
-            case 2:
-                status = 0;
-                break;
-        }
-        timeBeforeApplication = aDistribution(lyambda);
+        status++;
+        status %= 3;
+        timeBeforeApplication = NextDouble(lambda);
     }
 
     for (int i = 0; i < 3; i++)
     {
-        if (timeUntilEndOfChannel[i] == 0 && channel[i] == 1)
+        if (channel[i] == 1 && timeUntilEndOfChannel[i] < 1.0E-30)
         {
             channel[i] = 0;
             if (queue[i] > 0)
             {
                 queue[i]--;
                 channel[i] = 1;
-                timeUntilEndOfChannel[i] = aDistribution(my);
+                timeUntilEndOfChannel[i] = NextDouble(my);
             }
         }
     }
 
-
-    var minTimeUntilEndOfChannel = 0.0d;
-    if (channel[0] == 0 && channel[1] == 0 && channel[2] == 0)
+    var minTimeUntilEndOfChannel = double.MaxValue;
+    for (int i = 0; i < 3; i++)
     {
-        minTimeUntilEndOfChannel = -1;
-    }
-    else
-    {
-        if (channel[0] == 0 && channel[1] == 0 && channel[2] == 1)
+        if (channel[i] == 1)
         {
-            minTimeUntilEndOfChannel = timeUntilEndOfChannel[2];
-        }
-        else
-        {
-            if (channel[0] == 0 && channel[1] == 1 && channel[2] == 0)
-            {
-                minTimeUntilEndOfChannel = timeUntilEndOfChannel[1];
-            }
-            else
-            {
-                if (channel[0] == 1 && channel[1] == 0 && channel[2] == 0)
-                {
-                    minTimeUntilEndOfChannel = timeUntilEndOfChannel[0];
-                }
-                else
-                {
-                    if (channel[0] == 0 && channel[1] == 1 && channel[2] == 1)
-                    {
-                        if (timeUntilEndOfChannel[1] < timeUntilEndOfChannel[2])
-                        {
-                            minTimeUntilEndOfChannel = timeUntilEndOfChannel[1];
-                        }
-                        else
-                        {
-                            minTimeUntilEndOfChannel = timeUntilEndOfChannel[2];
-                        }
-                    }
-                    else
-                    {
-                        if (channel[0] == 1 && channel[1] == 0 && channel[2] == 1)
-                        {
-                            if (timeUntilEndOfChannel[0] < timeUntilEndOfChannel[2])
-                            {
-                                minTimeUntilEndOfChannel = timeUntilEndOfChannel[0];
-                            }
-                            else
-                            {
-                                minTimeUntilEndOfChannel = timeUntilEndOfChannel[2];
-                            }
-                        }
-                        else
-                        {
-                            if (channel[0] == 1 && channel[1] == 1 && channel[2] == 0)
-                            {
-                                if (timeUntilEndOfChannel[1] < timeUntilEndOfChannel[0])
-                                {
-                                    minTimeUntilEndOfChannel = timeUntilEndOfChannel[1];
-                                }
-                                else
-                                {
-                                    minTimeUntilEndOfChannel = timeUntilEndOfChannel[0];
-                                }
-                            }
-                            else
-                            {
-                                if (channel[0] == 1 && channel[1] == 1 && channel[2] == 1)
-                                {
-                                    if (timeUntilEndOfChannel[0] < timeUntilEndOfChannel[1] && timeUntilEndOfChannel[0] < timeUntilEndOfChannel[2])
-                                    {
-                                        minTimeUntilEndOfChannel = timeUntilEndOfChannel[0];
-                                    }
-                                    else
-                                    {
-                                        if (timeUntilEndOfChannel[1] < timeUntilEndOfChannel[0] && timeUntilEndOfChannel[1] < timeUntilEndOfChannel[2])
-                                        {
-                                            minTimeUntilEndOfChannel = timeUntilEndOfChannel[1];
-                                        }
-                                        else
-                                        {
-                                            minTimeUntilEndOfChannel = timeUntilEndOfChannel[2];
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            minTimeUntilEndOfChannel = Math.Min(minTimeUntilEndOfChannel, timeUntilEndOfChannel[i]);
         }
     }
 
-    double temp;
-    if (timeBeforeApplication < minTimeUntilEndOfChannel || minTimeUntilEndOfChannel == -1)
+    var minTime = Math.Min(timeBeforeApplication, minTimeUntilEndOfChannel);
+    timeBeforeApplication -= minTime;
+    for (int j = 0; j < 3; j++)
     {
-        temp = timeBeforeApplication;
-        timeBeforeApplication = 0;
-        for (int j = 0; j < 3; j++)
-        {
-            timeUntilEndOfChannel[j] -= temp;
-        }
-        timeInQueue += temp * (queue[0] + queue[1] + queue[2]);
-        timeInSystem += temp * (queue[0] + queue[1] + queue[2] + channel[0] + channel[1] + channel[2]);
+        timeUntilEndOfChannel[j] -= minTime;
     }
-    else
-    {
-        temp = minTimeUntilEndOfChannel;
-        timeBeforeApplication -= temp;
-        for (int j = 0; j < 3; j++)
-        {
-            timeUntilEndOfChannel[j] -= temp;
-        }
-        timeInQueue += temp * (queue[0] + queue[1] + queue[2]);
-        timeInSystem += temp * (queue[0] + queue[1] + queue[2] + channel[0] + channel[1] + channel[2]);
-    }
-
-    time += temp;
+    timeInQueue += minTime * (queue[0] + queue[1] + queue[2]);
+    timeInSystem += minTime * (queue[0] + queue[1] + queue[2] + channel[0] + channel[1] + channel[2]);
+    time += minTime;
 }
 
 var messsage =
-$@"Среднее число заявок в очереди = {timeInQueue / N}
-Среднее число заявок в системе = {timeInSystem / N} 
-Среднее время в очереди = {timeInQueue / quantityInSystem}
-Среднее время в системе = {timeInSystem/ quantityInSystem}";
+$@"Lo = {timeInQueue / count}
+Lc = {timeInSystem / count} 
+Wo = {timeInQueue / quantityInSystem}
+Wc = {timeInSystem/ quantityInSystem}";
+
 Console.WriteLine(messsage);
 
-double aDistribution(double lambda)
+double NextDouble(double lambda)
 {
     return -Math.Log(random.NextDouble()) / lambda;
+}
+
+double ParseFloat(string s)
+{
+    return double.Parse(s, CultureInfo.InvariantCulture);
 }
